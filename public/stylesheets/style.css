@@ -1,0 +1,36 @@
+body {
+	margin-top: 30px;
+}
+
+textarea {
+	resize: none;
+}
+
+.membox {
+	border: 2px solid;
+	border-radius: 15px;
+	margin: 5px;
+	padding: 10px; 		    
+	height: 120px;
+}
+
+.membox .word {
+	padding-top: 20px;
+	text-align: center;			
+	font-size: 20px;
+	font-weight: bold;			
+}
+
+.membox .definition {
+	padding: 5px;	
+	display: none;
+}
+
+.membox .close{
+    position:absolute;
+    right: 25px; top: 10px; /* Will place the close image in the top right edge of the image */
+    display:none;
+    z-index:1;
+}
+
+.membox:hover .close { display: block; }

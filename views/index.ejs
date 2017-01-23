@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>MyMem ♥ MyPrj</title>
+	
+	<% include com_header.ejs %>
+	
+	<link rel="stylesheet" href="./stylesheets/style.css">
+
+	<script>
+		$(document).ready(function() {
+			$('.membox').on('click', function() {				
+				// Show definition for 3 seconds and hide again~!
+				$(this).children('.word').stop().stop().stop().hide().delay(4000).fadeIn();
+				$(this).children('.definition').stop().stop().stop().fadeIn().delay(3000).fadeOut();
+			});
+
+		    $('#inputTitle, #taDefinition').keyup(function() {
+		        var empty = false;
+		        $('#inputTitle, #taDefinition').each(function() {
+		            if ($(this).val().length == 0) {
+		                empty = true;
+		            }
+		        });
+
+		        if (empty) {
+		            $('#submitMem').attr('disabled', 'disabled');
+		        } else {
+		            $('#submitMem').removeAttr('disabled');
+		        }
+		    });
+
+		    // Add Mem
+		    $('#submitMem').on('click', function() {
+		    	var val_word = $('input#inputWord').val();
+		    	var val_definition = $('#taDefinition').val();
+		    	var val_color = $('#selColor > option:selected').data('color');
+
+		    	$.ajax({
+					url: './',
+					type: 'POST',
+					data: { 
+						'word': val_word,
+						'definition': val_definition,
+						'color': val_color
+					},
+					success: function(result) {
+						var tmp_id = $.parseJSON(result).new_id;						
+						add_mem({
+							'mem_id': tmp_id,
+							'word': val_word,
+							'definition': val_definition,
+							'color': val_color
+						});
+					},
+				});
+
+		    	//return false;   // comment this line (pass click event to close modal window)
+		    });
+
+		    // Delete Mem
+		    $('.membox .close').on('click', function() {
+		    	var tmp_id = $(this).data('value');
+
+				$.ajax({
+					url: './delete',
+					type: 'POST',
+					data: { 'id': tmp_id },
+					success: function(result) {
+						$('#mem_' + tmp_id).fadeOut(300, function() {
+							$('#mem_' + tmp_id).remove();
+						});						
+					},
+				});
+
+				return false;	// prevent to pass click event!
+			});
+
+			$('#addMemModal').on('show.bs.modal', function (event) {
+				var modal = $(this)
+
+			  	modal.find('#inputWord').val('');
+			  	modal.find('#taDefinition').val('');
+			  	
+			  	// select random color
+			  	var options = $("#selColor > option");			  	
+				var random = Math.floor(options.length * (Math.random() % 1));				
+				$('#selColor').selectpicker('val', random);			
+			})
+
+			function add_mem(mem) {
+				var tmp_html = '';
+				
+				tmp_html += '<div class="col-md-3" id="mem_' + mem.mem_id + '">';
+				tmp_html += '  <div class="membox" style="border-color: ' + mem.color + ';">';
+				tmp_html += '    <div class="word" style="color: ' + mem.color + ';">' + mem.word + '</div>';
+				tmp_html += '    <div class="definition">' + mem.definition + '</div>';
+				tmp_html += '    <div class="close" data-value="' + mem.mem_id + '">';
+				tmp_html += '      <span class="glyphicon glyphicon-remove-circle" aria-hidden="true"></span>';
+				tmp_html += '    </div>';
+				tmp_html += '  </div>';
+				tmp_html += '</div>';
+
+				$('#mem_list').append(tmp_html);
+
+				// add event
+				$('#mem_' + mem.mem_id).on('click', '.membox .close', function() {
+					var tmp_id = $(this).data('value');
+
+					$.ajax({
+						url: './delete',
+						type: 'POST',
+						data: { 'id': tmp_id },
+						success: function(result) {
+							$('#mem_' + tmp_id).fadeOut(300, function() {
+								$('#mem_' + tmp_id).remove();
+							});						
+						},
+					});
+
+					return false;	// prevent to pass click event!
+				}).on('click', '.membox', function() {
+					$(this).children('.word').stop().stop().stop().hide().delay(4000).fadeIn();
+					$(this).children('.definition').stop().stop().stop().fadeIn().delay(3000).fadeOut();
+				});
+			};
+		});
+	</script>
+</head>
+<body>	
+	<!-- ADD New MEM (Bootstrap Modal) -->
+	<div class="modal fade" id="addMemModal" tabindex="-1" role="dialog">
+		<div class="modal-dialog" role="document">
+			<div class="modal-content">
+				<form class="form-horizontal">
+					<!-- MODAL HEADER -->
+					<div class="modal-header">
+						<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>				
+						<h3><span class="glyphicon glyphicon-pencil" aria-hidden="true"></span> New MEM 
+							<i><small>Register new words you want memory forever!</small></i>
+						</h3>					
+					</div>
+					<!-- MODAL BODY -->
+					<div class="modal-body">
+						<div class="row">
+							<div class="form-group">
+								<label for="inputWord" class="col-md-4 control-label">
+									Word <span class="glyphicon glyphicon-question-sign" aria-hidden="true"></span> 
+								</label>
+								<div class="col-md-6">
+									<input class="form-control" name="word" id="inputWord" placeholder="Type a word ...">
+								</div>						
+							</div>
+						</div>
+						<div class="row">
+							<div class="form-group">
+								<label for="taDefinition" class="col-md-4 control-label">
+									Definition <span class="glyphicon glyphicon-eye-open" aria-hidden="true"></span>
+								</label>					
+								<div class="col-md-6">
+									<textarea class="form-control" name="definition" rows="2" id="taDefinition"></textarea>
+								</div>
+							</div>	
+						</div>
+						<div class="row">
+							<div class="form-group">
+								<label for="selColor" class="col-md-4 control-label">
+									Color <span class="glyphicon glyphicon-tint" aria-hidden="true"></span> 
+								</label>
+								<div class="col-md-6">
+									<select class="selectpicker" name="color" id="selColor" data-width="100px">
+										<option value=0 data-color="#428bca" data-content="<span class='label label-primary'>Blue</span>"></option>
+										<option value=1 data-color="#5cb85c" data-content="<span class='label label-success'>Green</span>"></option>
+										<option value=2 data-color="#5bc0de" data-content="<span class='label label-info'>Skyblue</span>"></option>
+										<option value=3 data-color="#f0ad4e" data-content="<span class='label label-warning'>Orange</span>"></option>
+										<option value=4 data-color="#d9534f" data-content="<span class='label label-danger'>Red</span>"></option>
+										<option value=5 data-color="#808080" data-content="<span class='label label-default'>Gray</span>"></option>	
+									</select>
+								</div>																	
+							</div>				
+						</div>						
+					</div>
+					<!-- MODAL FOOTER -->
+					<div class="modal-footer">
+						<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+						<button type="button" class="btn btn-primary" data-dismiss="modal" id="submitMem" disabled>Add MEM</button>						
+					</div>
+				</form><!-- /form -->						
+			</div><!-- /.modal-content -->
+		</div><!-- /.modal-dialog -->
+	</div><!-- /.modal -->
+
+	<div class="container">		
+		<div class='page-header'>
+			<div class='btn-toolbar pull-right'>
+				<div class='btn-group'>
+					<button type='button' class='btn btn-primary' data-toggle="modal" data-target="#addMemModal">
+						<span class="glyphicon glyphicon-pencil" aria-hidden="true"></span> Add New MEM
+					</button>
+				</div>
+			</div>
+			<h3><span class="glyphicon glyphicon-th" aria-hidden="true"></span> MEM List 
+				<i><small>Click MEM to filp to show definition!</small></i>
+			</h3>
+		</div>
+		
+		<div class="row" id="mem_list">
+			<% mems.forEach(function(mem, index) { %>			
+			<div class="col-md-3" id="mem_<%= mem._id %>">
+				<div class="membox" style="border-color: <%= mem.color %>;">
+					<div class="word" style="color: <%= mem.color %>;""><%= mem.word %></div>
+					<div class="definition"><%= mem.definition %></div>
+					
+					<div class="close" data-value="<%= mem._id %>">
+						<span class="glyphicon glyphicon-remove-circle" aria-hidden="true"></span>
+					</div>					
+				</div>
+			</div>
+			<% }) %> 	
+		</div>	
+	</div>
+</body>
+</html>
+
